@@ -11,7 +11,47 @@ if(!class_exists('deals_options')) :
  			 add_action('admin_menu', array($this,'submenu_page'));
  			 add_action('save_post', array($this, 'save_metadata'));
  			 add_action('deleted_post', array($this, 'deleted_post'));
+ 			 add_action('init', array($this, 'register_trdm_post_types'));
  		}
+ 		
+ 		/*
+ 		 * Custom Posttype creation
+ 		 * */
+ 		function register_trdm_post_types(){
+			if(function_exists('register_post_type')) {
+				// workouts
+				$labels = array(
+					'name' => _x('Deals', 'post type general name'),
+					'singular_name' => _x('Deal', 'post type singular name'),
+					'add_new' => _x('Add New', 'Deal'),
+					'add_new_item' => __('Add New Deal'),
+					'edit_item' => __('Edit Deal'),
+					'new_item' => __('New Deal'),
+					'view_item' => __('View Deal'),
+					'search_items' => __('Search Deals'),
+					'not_found' =>  __('No Deals found'),
+					'not_found_in_trash' => __('No Deals found in Trash'),
+					'parent_item_colon' => ''
+				);
+				$args = array(
+					'labels' => $labels,
+					'public' => true,
+					'publicly_queryable' => true,
+					'show_ui' => true,
+					'query_var' => true,
+					'rewrite' => true,
+					'capability_type' => 'post',
+					'hierarchical' => false,
+					'menu_position' => 5,
+					'supports' => array('title','editor','author','thumbnail','excerpt','custom-fields')
+				);
+
+				register_post_type('deal',$args);
+				
+			}
+			
+		}
+ 		
  		
  		/*
  		 * clears the table if post is deleted
@@ -80,39 +120,26 @@ if(!class_exists('deals_options')) :
 			 $message = '';
 			 
 			 if($_POST['csv-deal-clear'] == 'Y') :
-				
-				$args = array( 
-					'post_type' => 'deal',
-					'posts_per_page' => -1				 
-				);
+								
 						 
 				$category = $_POST['category'];
 				
 				if($category == ''){
 					$message = '<div class="error"><p>Select any One Category!</p></div>';
-				}
-				elseif($category == 'all'){
-					$wp_query = new WP_Query( $args );
-				}
+				}				
 				else{
-					
-					$args['meta_query'] = array(
-						array(
-							'key' => 'Category',
-							'value' => $category,				
-						)	  
-				  );
-				  
-				  $wp_query = new WP_Query( $args );
+					global $wpdb;
+					$posts = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE post_type = 'deal'");
+									
 				}
-				
-				if($wp_query->have_posts()) :
+								
+				if($posts) :
 					
-					foreach($wp_query->posts as $key=>$post){
-						wp_delete_post($post->ID, true);
-					}
-					
+					foreach($posts as $key=>$post){
+						wp_delete_post($post, true);
+					}					
 					$message = '<div class="updated"><p>Operation Successfull!</p></div>';
+					
 				endif; 
 							
 				
@@ -130,10 +157,7 @@ if(!class_exists('deals_options')) :
 				<form action='' method='post'>
 					<input type='hidden' name='csv-deal-clear' value='Y' />
 					<Select name='category'>
-						<option value=''>Select</option>
-						<option value='office'>Office</option>
-						<option value='commercial'>Commercial</option>
-						<option value='retail'>Retail</option>
+						<option value=''>Select</option>						
 						<option value='all'>All Deal</option>
 					</Select>
 					<input class ="button-primary" type="submit" value="Clear" />

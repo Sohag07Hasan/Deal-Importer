@@ -1,10 +1,10 @@
 <?php 
 /*
- * plugin name: TRDM CSV deal Importer
+ * plugin name: TRDM Deals AND Deal Importer
  * author: Mahibul Hasan
- * description: It imprort different types of deal data as csv format.
+ * description: creates a new posttype deal and a csv uploader under tools
  * version: 2.0.1
- * plugin uri: http://voltierdigital.com/ove/
+ * plugin uri: http://therealdeal.com/
  * author uri: http://sohag.me
  * 
  * */
