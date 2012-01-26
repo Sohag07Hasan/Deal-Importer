@@ -9,6 +9,7 @@
  * 
  * */
 
+define('TRDM_CSV_FILE', __FILE__);
 define('TRDM_CSV_DIR', dirname(__FILE__));
 define('TRDM_CSV_CLASS', TRDM_CSV_DIR . '/classes');
 

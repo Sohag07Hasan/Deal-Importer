@@ -60,14 +60,31 @@ Template Name: Deals
 	$deal_category = "commercial"; // Default category
 	
 	global $wp_rewrite;
-	$wp_query->query_vars['paged'] > 1 ? $current = $wp_query->query_vars['paged'] : $current = 1;
 	
-	// TO-DO: Figure out what they want to do here
-	if (preg_match('/commercial-leases/', $_SERVER['REQUEST_URI']) || $_REQUEST['category'] == "commercial-leases") $deal_category = "'clease'";
+		
 	if (preg_match('/building-sales/', $_SERVER['REQUEST_URI']) || $_REQUEST['category'] == "building-sale") $deal_category = "office";
 	if (preg_match('/retail-leases/', $_SERVER['REQUEST_URI']) || $_REQUEST['category'] == "retail-leases") $deal_category = "retail";
 	if (preg_match('/office-leases/', $_SERVER['REQUEST_URI']) || $_REQUEST['category'] == "office-leases") $deal_category = "office";
 		
+	
+	// filtering the inner join
+	function inner_join($join, $query){
+		global $wpdb;
+		$table = $wpdb->prefix . 'trdmdeals';
+		$join .= ' INNER JOIN ' . $table . ' ON (' . $wpdb->posts . '.ID = ' . $table . '.post_id)';
+		
+		return $join;
+	}
+	//add_filter('posts_join', 'inner_join', 100, 2);
+	add_filter('posts_join_paged', 'inner_join', 100, 2);
+	
+	function order_by($orderby){
+		global $wpdb;
+		$table = $wpdb->prefix . 'trdmdeals';
+		$orderby = $table . '.sq_feet DESC';
+		return $orderby;
+	}
+	add_filter('posts_orderby', 'order_by');
 	
 	
 	//seach things are here
@@ -104,24 +121,21 @@ Template Name: Deals
 		$max = (int) $_REQUEST['sqmax'];
 		
 		if($max > $min) :
-			foreach($newposts as $post) :
-				$sq_val = get_post_meta($post->ID, 'Size Info', true);
-				$sq_val = (empty($sq_val)) ? get_post_meta($post->ID, 'Square Feet', true) : $sq_val;
+			foreach($newposts as $post) :				
+				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
 				if($sq_val >= $min && $sq_val <= $max) $finalposts[] = $post;
 			endforeach;
 			$newposts = $finalposts;
 		elseif($min > 0) :
 			foreach($newposts as $post) :
-				$sq_val = get_post_meta($post->ID, 'Size Info', true);
-				$sq_val = (empty($sq_val)) ? get_post_meta($post->ID, 'Square Feet', true) : $sq_val;
+				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
 				if($sq_val >= $min) $finalposts[] = $post;
 			endforeach;
 			$newposts = $finalposts;
 			
 		elseif($max > 10) :			
 			foreach($newposts as $post) :
-				$sq_val = get_post_meta($post->ID, 'Size Info', true);
-				$sq_val = (empty($sq_val)) ? get_post_meta($post->ID, 'Square Feet', true) : $sq_val;
+				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
 				if($sq_val <= $max) $finalposts[] = $post;
 			endforeach;
 			$newposts = $finalposts;
@@ -136,17 +150,17 @@ Template Name: Deals
 	
 		
 	global $wp_rewrite;
-	$wp_query->query_vars['paged'] > 1 ? $current = $wp_query->query_vars['paged'] : $current = 1;		
+			
 	$args = array( 
 		'post_type' => 'deal',
 		'posts_per_page' => 10, 
-		'paged' => $paged,
+		'paged' => $paged,		
 		'meta_query' => array(
 			array(
 				'key' => 'Category',
-				'value' => $deal_category,				
-			),	  
-		  ),
+				'value' => $deal_category				
+			)	  
+		  )
 		 
 	);
 	
@@ -157,6 +171,7 @@ Template Name: Deals
 	
 	
 	$wp_query = new WP_Query( $args );
+	$wp_query->query_vars['paged'] > 1 ? $current = $wp_query->query_vars['paged'] : $current = 1;
 	
 	if($_REQUEST['deal_search'] != 'Y') :
 	
@@ -242,28 +257,32 @@ Template Name: Deals
 	/*
 	 * echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th></tr>';
 	 */
-	echo '<tr><th>Address</th><th>Square Feet</th><th>Price</th><th>Buyer</th><th>Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issues</th><th>Date</th></tr>';
+	 
+	 $sq_colum = 'Square Feet';
+	 if($deal_category == 'commercial') $sq_colum = 'Size Info';
+	 
+	echo '<tr><th>Address</th><th>' . $sq_colum . '</th><th>Price</th><th>Buyer</th><th>Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issues</th><th>Date</th></tr>';
 	
 	$sort_values = array();
 	while ( $wp_query->have_posts() ) : $wp_query->the_post();
 		//$custom_fields = get_post_custom(get_the_ID());
-		$sort_values[get_the_ID()] = get_post_meta(get_the_ID(),'Square Feet',true);				
+		$sort_values[get_the_ID()] = get_post_meta(get_the_ID(),'Square_Feet',true);				
 	endwhile;
 	arsort($sort_values);
 	
 	foreach ($sort_values as $key=>$value) :
 		$custom_fields = get_post_custom($key);
-		echo '<td width="120">' . $custom_fields['Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full Address'][0] . '"><b>MAP</b></a>';
+		echo '<td width="120">' . $custom_fields['Full_Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full_Address'][0] . '"><b>MAP</b></a>';
 		if ( current_user_can('manage_options') ) { 
 			echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
 		} 
 		echo '</td>';
-		echo '<td width="120" align="center">' . $custom_fields['Square Feet'][0] . '</td>';
+		echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
 		echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Landlord Representative'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';

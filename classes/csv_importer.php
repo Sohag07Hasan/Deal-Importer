@@ -177,6 +177,8 @@ class CSVImporterPlugin {
 
     // Handle POST submission
     function post($options) {
+		
+		
         if (empty($_FILES['csv_import']['tmp_name'])) {
             $this->log['error'][] = 'No file uploaded, aborting.';
             $this->print_messages();
@@ -209,8 +211,13 @@ class CSVImporterPlugin {
 
         $skipped = 0;
         $imported = 0;
-        $comments = 0;         
+        $comments = 0;  
         
+        /*
+         * removing all the hooks from savepost
+         * */     
+        global $deals_obj;
+         remove_action('save_post', array($deals_obj, 'save_metadata'));
                       
         foreach ($csv->getRawArray() as $csv_data) {
 			$new_csv = array();
@@ -271,10 +278,23 @@ class CSVImporterPlugin {
 
         // create!
         $id = wp_insert_post($new_post);
-
+		
+		if($id > 0){
+			$this->update_square_feet($id, $data);
+		}
+		
         
         return $id;
     }
+    
+    // square feet data update
+    function update_square_feet($post_id, $data){
+		global $wpdb;
+		$table = $wpdb->prefix . 'trdmdeals';			
+		$sq = preg_replace('/[^0-9]/', '', $data[3]);					
+		$wpdb->insert($table, array('post_id'=>$post_id, 'sq_feet'=>$sq), array('%d', '%d'));			
+		
+	}
 
     /**
      * Return an array of category ids for a post.
@@ -517,13 +537,13 @@ class CSVImporterPlugin {
 					update_post_meta($post_id, "Price", $v);
 					break;
 				case 3 :
-					 update_post_meta($post_id, "Square Feet", $v);
+					 update_post_meta($post_id, "Square_Feet", $v);
 					 break;
 				case 4 :
 					update_post_meta($post_id, "Landlord", $v);
 					break;
 				case 5:
-					update_post_meta($post_id, "Landlord Representative", $v);
+					update_post_meta($post_id, "Landlord_Representative", $v);
 					break;
 				case 6 :
 					update_post_meta($post_id, "Tenant", $v);
@@ -532,7 +552,7 @@ class CSVImporterPlugin {
 					update_post_meta($post_id, "Representative", $v);
 					break;
 				case 8 :
-					update_post_meta($post_id, "Full Address", $v);
+					update_post_meta($post_id, "Full_Address", $v);
 					break;
 				case 9: 
 					update_post_meta($post_id, "Notes", $v);
@@ -592,87 +612,14 @@ class CSVImporterPlugin {
             $this->log['error'][] = 'Failed to open file, aborting.';
         }
     }
-    
-    /**
-     * Submenu page to delete all the deals data
-     * 
-     * */
-     function deal_subpage(){
-		 $message = '';
-		 
-		 if($_POST['csv-deal-clear'] == 'Y') :
-			
-			$args = array( 
-				'post_type' => 'deal',
-				'posts_per_page' => -1				 
-			);
-					 
-			$category = $_POST['category'];
-			
-			if($category == ''){
-				$message = '<div class="error"><p>Select any One Category!</p></div>';
-			}
-			elseif($category == 'all'){
-				$wp_query = new WP_Query( $args );
-			}
-			else{
-				
-				$args['meta_query'] = array(
-					array(
-						'key' => 'Category',
-						'value' => $category,				
-					)	  
-			  );
-			  
-			  $wp_query = new WP_Query( $args );
-			}
-			
-			if($wp_query->have_posts()) :
-				
-				foreach($wp_query->posts as $key=>$post){
-					wp_delete_post($post->ID, true);
-				}
-				
-				$message = '<div class="updated"><p>Operation Successfull!</p></div>';
-			endif; 
-						
-			
-		 endif;	 
-		 
-		?>
-		
-		<div class="wrap">
-			<?php screen_icon('tools'); ?>
-			<h2>Clear The Deals</h2>
-			<?php echo $message; ?>
-			<p>This Operation will delete the deals' data from the database. This cannot be undo. Be sure before doing this operation</p>
-			<strong>Select any category and Press the Clear!</strong>
-			<br />
-			<form action='' method='post'>
-				<input type='hidden' name='csv-deal-clear' value='Y' />
-				<Select name='category'>
-					<option value=''>Select</option>
-					<option value='office'>Office</option>
-					<option value='commercial'>Commercial</option>
-					<option value='retail'>Retail</option>
-					<option value='all'>All Deal</option>
-				</Select>
-				<input class ="button-primary" type="submit" value="Clear" />
-			</form>
-		</div>
-		
-		<?
-	 }
+
 }
-
-
-
 
 function csv_admin_menu() {
     require_once ABSPATH . '/wp-admin/admin.php';
     $plugin = new CSVImporterPlugin;
     add_management_page('edit.php', 'Deals Importer', 9, __FILE__, array($plugin, 'form'));
-    add_submenu_page('edit.php?post_type=deal', 'Clear Deals', 'Clear Deals', 'manage_options', 'deal_delete', array($plugin, 'deal_subpage'));
+   
 }
 
 add_action('admin_menu', 'csv_admin_menu');
