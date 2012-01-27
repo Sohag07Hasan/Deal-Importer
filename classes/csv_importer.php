@@ -280,7 +280,7 @@ class CSVImporterPlugin {
         $id = wp_insert_post($new_post);
 		
 		if($id > 0){
-			$this->update_square_feet($id, $data);
+			$this->update_issue_value($id, $data);
 		}
 		
         
@@ -288,10 +288,12 @@ class CSVImporterPlugin {
     }
     
     // square feet data update
-    function update_square_feet($post_id, $data){
+    function update_issue_value($post_id, $data){
 		global $wpdb;
 		$table = $wpdb->prefix . 'trdmdeals';			
-		$sq = preg_replace('/[^0-9]/', '', $data[3]);					
+		$issue = strip_tags($data[10]);
+		$issue = preg_replace('/[^a-zA-Z0-9 ]/', '', $issue);
+		$sq = @ strtotime($issue);				
 		$wpdb->insert($table, array('post_id'=>$post_id, 'sq_feet'=>$sq), array('%d', '%d'));			
 		
 	}

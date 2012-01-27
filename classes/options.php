@@ -68,11 +68,13 @@ if(!class_exists('deals_options')) :
 			global $post;
 			
 			if(in_array($post->post_status, array('draft', 'publish')) && $post->post_type == 'deal') :			
-				global $wpdb;			
-				$sq = get_post_meta($post_id, 'Square_Feet', true);					
-				
-				$table = $wpdb->prefix . 'trdmdeals';			
-				$sq = preg_replace('/[^0-9]/', '', $sq);
+				global $wpdb;
+				$table = $wpdb->prefix . 'trdmdeals';
+							
+				$sq = get_post_meta($post_id, 'Issues', true);							
+				$issue = strip_tags($sq);
+				$issue = preg_replace('/[^a-zA-Z0-9 ]/', '', $issue);
+				$sq = @ strtotime($issue);				
 				
 				$check = $wpdb->get_var("SELECT id FROM $table WHERE post_id = '$post_id'");
 				if($check){
