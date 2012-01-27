@@ -75,8 +75,9 @@ Template Name: Deals
 		
 		return $join;
 	}
-	//add_filter('posts_join', 'inner_join', 100, 2);
-	add_filter('posts_join_paged', 'inner_join', 100, 2);
+	if($deal_category != 'commercial'):
+		add_filter('posts_join_paged', 'inner_join', 100, 2);
+	endif;
 	
 	function order_by($orderby){
 		global $wpdb;
@@ -84,7 +85,10 @@ Template Name: Deals
 		$orderby = $table . '.sq_feet DESC';
 		return $orderby;
 	}
-	add_filter('posts_orderby', 'order_by');
+	
+	if($deal_category != 'commercial'):
+		add_filter('posts_orderby', 'order_by');
+	endif;
 	
 	
 	//seach things are here
