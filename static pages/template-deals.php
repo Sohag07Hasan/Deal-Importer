@@ -219,7 +219,7 @@ Template Name: Deals
 					</tr>
 					
 					<tr>
-						<td>Filter Results By Square Feets</td>						
+						<td>Filter Results By Square Feet</td>						
 					</tr>
 					
 					<tr>
@@ -265,32 +265,68 @@ Template Name: Deals
 	 $sq_colum = 'Square Feet';
 	 if($deal_category == 'commercial') $sq_colum = 'Size Info';
 	 
-	echo '<tr><th>Address</th><th>' . $sq_colum . '</th><th>Price</th><th>Buyer</th><th>Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issues</th><th>Date</th></tr>';
+	echo '<tr><th>Address</th><th>' . $sq_colum . '</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+	
+	/*
+	 * Now it is time for sorting
+	 * */
+	 global $wpdb;
+	 $table = $wpdb->prefix . 'trdmdeals';
+	
+	function timestamp_to_key($time){
+		return date('Y', $time) . date('n', $time);
+	}
 	
 	$sort_values = array();
 	while ( $wp_query->have_posts() ) : $wp_query->the_post();
-		//$custom_fields = get_post_custom(get_the_ID());
-		$sort_values[get_the_ID()] = get_post_meta(get_the_ID(),'Square_Feet',true);				
+		
+		$post_id = get_the_ID();
+		if($deal_category == 'commercial'){
+			$sqfeet = get_post_meta($post_id, 'Price', true);
+		}
+		else{
+			$sqfeet = get_post_meta($post_id, 'Square_Feet', true);
+		}
+		
+		$sqfeet = preg_replace('/[^0-9]/', '', $sqfeet);
+						
+		$issue_time = $wpdb->get_var("SELECT sq_feet FROM $table WHERE post_id = '$post_id'");
+		$sort_values[timestamp_to_key($issue_time)][$post_id] = $sqfeet;		
+					
 	endwhile;
-	arsort($sort_values);
 	
-	foreach ($sort_values as $key=>$value) :
-		$custom_fields = get_post_custom($key);
-		echo '<td width="120">' . $custom_fields['Full_Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full_Address'][0] . '"><b>MAP</b></a>';
-		if ( current_user_can('manage_options') ) { 
-			echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
-		} 
-		echo '</td>';
-		echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
-		echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
-		echo '</tr>';
+	//var_dump($sort_values);
+	
+	$sorted = array();
+	foreach($sort_values as $keys){
+		arsort($keys);
+		$sorted[] = $keys;
+	}
+	
+	//var_dump($sorted);
+	
+	//arsort($sort_values);
+	
+	foreach ($sorted as $values) :
+		foreach($values as $key=>$value) :
+			$custom_fields = get_post_custom($key);
+			echo '<td width="120">' . $custom_fields['Full_Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full_Address'][0] . '"><b>MAP</b></a>';
+			if ( current_user_can('manage_options') ) { 
+				echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
+			} 
+			echo '</td>';
+			echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
+			echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
+			echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
+			echo '</tr>';
+		endforeach;
+		
 	endforeach;
 	
 	
