@@ -69,26 +69,41 @@ Template Name: Deals
 	
 	// filtering the inner join
 	function inner_join($join, $query){
+		global $deal_category;
 		global $wpdb;
 		$table = $wpdb->prefix . 'trdmdeals';
 		$join .= ' INNER JOIN ' . $table . ' ON (' . $wpdb->posts . '.ID = ' . $table . '.post_id)';
 		
 		return $join;
 	}
-	if($deal_category != 'commercial'):
+	
 		add_filter('posts_join_paged', 'inner_join', 100, 2);
-	endif;
+	
 	
 	function order_by($orderby){
-		global $wpdb;
+		global $wpdb, $deal_category;
 		$table = $wpdb->prefix . 'trdmdeals';
-		$orderby = $table . '.sq_feet DESC';
+		//$orderby = $table . '.issue DESC, ' . $table . '.sq_feet DESC' ;
+		
+		if($deal_category == 'commercial'){
+			$orderby = $table . '.issue DESC, ' . $table . '.price DESC' ;
+		}
+		else{
+			$orderby = $table . '.issue DESC, ' . $table . '.sq_feet DESC' ;
+		}				
 		return $orderby;
 	}
 	
-	if($deal_category != 'commercial'):
+	
 		add_filter('posts_orderby', 'order_by');
-	endif;
+	
+	
+	function group_by($orderby){
+		global $wpdb;
+		$table = $wpdb->prefix . 'trdmdeals';
+		return $table . '.issue';
+	}
+	//add_filter('posts_groupby', 'group_by');
 	
 	
 	//seach things are here
@@ -96,6 +111,9 @@ Template Name: Deals
 		add_filter('posts_where_paged', 'query_changing',10,2);
 		add_filter('posts_results', 'result_changing',10,2);
 	endif;
+	
+	
+	
 	
 	function query_changing($where, &$wp_query){		
 	//	echo $where . '<br/><br/>';
@@ -281,53 +299,25 @@ Template Name: Deals
 	while ( $wp_query->have_posts() ) : $wp_query->the_post();
 		
 		$post_id = get_the_ID();
-		if($deal_category == 'commercial'){
-			$sqfeet = get_post_meta($post_id, 'Price', true);
-		}
-		else{
-			$sqfeet = get_post_meta($post_id, 'Square_Feet', true);
-		}
+	
+		$custom_fields = get_post_custom($post_id);
+		echo '<td width="120">' . $custom_fields['Full_Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full_Address'][0] . '"><b>MAP</b></a>';
+		if ( current_user_can('manage_options') ) { 
+			echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
+		} 
+		echo '</td>';
+		echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
+		echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
+		echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
+		echo '</tr>';
 		
-		$sqfeet = preg_replace('/[^0-9]/', '', $sqfeet);
-						
-		$issue_time = $wpdb->get_var("SELECT sq_feet FROM $table WHERE post_id = '$post_id'");
-		$sort_values[timestamp_to_key($issue_time)][$post_id] = $sqfeet;		
-					
-	endwhile;
-	
-	//var_dump($sort_values);
-	
-	$sorted = array();
-	foreach($sort_values as $keys){
-		arsort($keys);
-		$sorted[] = $keys;
-	}
-	
-	//var_dump($sorted);
-	
-	//arsort($sort_values);
-	
-	foreach ($sorted as $values) :
-		foreach($values as $key=>$value) :
-			$custom_fields = get_post_custom($key);
-			echo '<td width="120">' . $custom_fields['Full_Address'][0] . '<br/><a href="http://maps.google.com/maps?q=' . $custom_fields['Full_Address'][0] . '"><b>MAP</b></a>';
-			if ( current_user_can('manage_options') ) { 
-				echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
-			} 
-			echo '</td>';
-			echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
-			echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
-			echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
-			echo '</tr>';
-		endforeach;
-		
-	endforeach;
+		endwhile;
 	
 	
 		echo '</tr></table>';

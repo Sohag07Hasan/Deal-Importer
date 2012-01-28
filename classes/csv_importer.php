@@ -290,13 +290,28 @@ class CSVImporterPlugin {
     // square feet data update
     function update_issue_value($post_id, $data){
 		global $wpdb;
-		$table = $wpdb->prefix . 'trdmdeals';			
+		$table = $wpdb->prefix . 'trdmdeals';
+		
+		//issue			
 		$issue = strip_tags($data[10]);
 		$issue = preg_replace('/[^a-zA-Z0-9 ]/', '', $issue);
-		$sq = @ strtotime($issue);				
-		$wpdb->insert($table, array('post_id'=>$post_id, 'sq_feet'=>$sq), array('%d', '%d'));			
+		$issue = @ strtotime($issue);
+		$issue = $this->timestamp_to_key($issue);
+	
+		$price = preg_replace('/[^0-9]/', '', $data[2]);		
+		$sq_feet = preg_replace('/[^0-9]/', '', $data[3]);		
+					
+		$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%d', '%d'));			
 		
 	}
+	
+	/*
+	 * create unique key from a timesatmp yyyymm
+	 * */
+	 function timestamp_to_key($time){
+		return date('Y', $time) . date('m', $time);
+	}
+	 
 
     /**
      * Return an array of category ids for a post.

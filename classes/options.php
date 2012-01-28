@@ -8,11 +8,19 @@ if(!class_exists('deals_options')) :
  	class deals_options{
  		function __construct(){
  			register_activation_hook(TRDM_CSV_FILE, array($this, 'table_creation'));
+ 			register_deactivation_hook(TRDM_CSV_FILE, array($this, 'table_delete'));
  			 add_action('admin_menu', array($this,'submenu_page'));
  			 add_action('save_post', array($this, 'save_metadata'));
  			 add_action('deleted_post', array($this, 'deleted_post'));
  			 add_action('init', array($this, 'register_trdm_post_types'));
  		}
+ 		
+ 		//deleting table
+ 		function table_delete(){
+			global $wpdb;
+			$table = $wpdb->prefix . 'trdmdeals';
+			$wpdb->query("DROP TABLE $table");
+		}
  		
  		/*
  		 * Custom Posttype creation
@@ -71,20 +79,31 @@ if(!class_exists('deals_options')) :
 				global $wpdb;
 				$table = $wpdb->prefix . 'trdmdeals';
 							
-				$sq = get_post_meta($post_id, 'Issues', true);							
-				$issue = strip_tags($sq);
+				$issue = get_post_meta($post_id, 'Issues', true);							
+				$issue = strip_tags($issue);
 				$issue = preg_replace('/[^a-zA-Z0-9 ]/', '', $issue);
-				$sq = @ strtotime($issue);				
+				$issue = @ strtotime($issue);
+				$issue = $this->timestamp_to_key($issue);
 				
+			
+				$price = preg_replace('/[^0-9]/', '', get_post_meta($post_id, 'Price', true));
+			
+				$sq_feet = preg_replace('/[^0-9]/', '', get_post_meta($post_id, 'Square_Feet', true));			
+												
 				$check = $wpdb->get_var("SELECT id FROM $table WHERE post_id = '$post_id'");
+				
 				if($check){
-					$wpdb->update($table, array('sq_feet'=>$sq), array('post_id'=>$post_id), array('%d'), array('%d'));
+					$wpdb->update($table, array('issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('post_id'=>$post_id), array('%d', '%d', '%d'), array('%d'));
 				}
 				else{
-					$wpdb->insert($table, array('post_id'=>$post_id, 'sq_feet'=>$sq), array('%d', '%d'));
+					$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%d', '%d'));
 				}
 			endif;
 			
+		}
+		
+		function timestamp_to_key($time){
+			return date('Y', $time) . date('m', $time);
 		}
  		
  		/*
@@ -103,7 +122,9 @@ if(!class_exists('deals_options')) :
 			$sql = "CREATE TABLE IF NOT EXISTS $table(
 				id bigint unsigned NOT NULL AUTO_INCREMENT,
 				post_id bigint unsigned NOT NULL,
-				sq_feet int DEFAULT 0,
+				issue bigint DEFAULT 0,
+				sq_feet bigint DEFAULT 0,
+				price int DEFAULT 0,
 				PRIMARY KEY(id),
 				UNIQUE(post_id)
 			)";
@@ -131,18 +152,13 @@ if(!class_exists('deals_options')) :
 				}				
 				else{
 					global $wpdb;
-					$posts = $wpdb->get_col("SELECT ID FROM $wpdb->posts WHERE post_type = 'deal'");
-									
-				}
-								
-				if($posts) :
+					$table = $wpdb->prefix . 'trdmdeals';
 					
-					foreach($posts as $key=>$post){
-						wp_delete_post($post, true);
-					}					
-					$message = '<div class="updated"><p>Operation Successfull!</p></div>';
-					
-				endif; 
+					$wpdb->query("DELETE FROM $wpdb->posts WHERE post_type = 'deal'");
+													
+					$wpdb->query("DELETE FROM $table");		
+					$message = '<div class="updated"><p>All the deals are deleted !</p></div>';							
+				}	
 							
 				
 			 endif;	 
