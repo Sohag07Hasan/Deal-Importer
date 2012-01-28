@@ -275,27 +275,29 @@ Template Name: Deals
 	
 	<?php
 	
+	function square_feet_sanitizing($sq_feet){
+		$sq_feet = (int)preg_replace('/[^0-9]/', '', $sq_feet);
+		return number_format($sq_feet);
+	}
+	
 	echo '<table border="0" cellspacing="1" cellpadding="10"><tr>';
 	/*
 	 * echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th></tr>';
 	 */
 	 
-	 $sq_colum = 'Square Feet';
-	 if($deal_category == 'commercial') $sq_colum = 'Size Info';
 	 
-	echo '<tr><th>Address</th><th>' . $sq_colum . '</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
-	
+	 if($deal_category == 'commercial'):	 
+		echo '<tr><th>Address</th><th>Square Feet</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+	 else :
+		echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Tenant Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+	 endif;
 	/*
 	 * Now it is time for sorting
 	 * */
 	 global $wpdb;
 	 $table = $wpdb->prefix . 'trdmdeals';
 	
-	function timestamp_to_key($time){
-		return date('Y', $time) . date('n', $time);
-	}
-	
-	$sort_values = array();
+			
 	while ( $wp_query->have_posts() ) : $wp_query->the_post();
 		
 		$post_id = get_the_ID();
@@ -306,8 +308,12 @@ Template Name: Deals
 			echo '<br/><a href="/wp-admin/post.php?post=' . $key . '&action=edit"><b>EDIT</b></a>'; 
 		} 
 		echo '</td>';
-		echo '<td width="120" align="center">' . $custom_fields['Square_Feet'][0] . '</td>';
-		echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
+		echo '<td width="120" align="center">' . square_feet_sanitizing($custom_fields['Square_Feet'][0]) . '</td>';
+		
+		if($deal_category == 'commercial'):
+			echo '<td width="120" align="center">' . $custom_fields['Price'][0] . '</td>';
+		endif;
+		
 		echo '<td width="120">' . $custom_fields['Tenant'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Representative'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Landlord'][0] . '</td>';
