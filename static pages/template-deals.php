@@ -287,7 +287,7 @@ Template Name: Deals
 	 
 	 
 	 if($deal_category == 'commercial'):	 
-		echo '<tr><th>Address</th><th>Square Feet</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+		echo '<tr><th>Address</th><th>Size Info</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
 	 else :
 		echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Tenant Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
 	 endif;

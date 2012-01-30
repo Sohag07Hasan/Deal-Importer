@@ -1,4 +1,5 @@
 <?php
+set_time_limit(0);
 /*
 Plugin Name: TRDM Deals Importer
 Description: Import data as posts from a CSV file. <em>You can reach the author at <a href="mailto:d.v.kobozev@gmail.com">d.v.kobozev@gmail.com</a></em>.
@@ -298,10 +299,10 @@ class CSVImporterPlugin {
 		$issue = @ strtotime($issue);
 		$issue = $this->timestamp_to_key($issue);
 	
-		$price = preg_replace('/[^0-9]/', '', $data[2]);		
-		$sq_feet = preg_replace('/[^0-9]/', '', $data[3]);		
+		$price = (float) preg_replace('/[^0-9.]/', '', $data[2]);		
+		$sq_feet = (float) preg_replace('/[^0-9.]/', '', $data[3]);		
 					
-		$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%d', '%d'));			
+		$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%f', '%f'));			
 		
 	}
 	

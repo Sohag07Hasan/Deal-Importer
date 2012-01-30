@@ -1,4 +1,5 @@
 <?php
+set_time_limit(0);
 /*
  * makes an options page to set if the data is to be sorted by asc or desc
  * 
@@ -8,7 +9,7 @@ if(!class_exists('deals_options')) :
  	class deals_options{
  		function __construct(){
  			register_activation_hook(TRDM_CSV_FILE, array($this, 'table_creation'));
- 			register_deactivation_hook(TRDM_CSV_FILE, array($this, 'table_delete'));
+ 			//register_deactivation_hook(TRDM_CSV_FILE, array($this, 'table_delete'));
  			 add_action('admin_menu', array($this,'submenu_page'));
  			 add_action('save_post', array($this, 'save_metadata'));
  			 add_action('deleted_post', array($this, 'deleted_post'));
@@ -86,17 +87,17 @@ if(!class_exists('deals_options')) :
 				$issue = $this->timestamp_to_key($issue);
 				
 			
-				$price = preg_replace('/[^0-9]/', '', get_post_meta($post_id, 'Price', true));
+				$price = (float) preg_replace('/[^0-9.]/', '', get_post_meta($post_id, 'Price', true));
 			
-				$sq_feet = preg_replace('/[^0-9]/', '', get_post_meta($post_id, 'Square_Feet', true));			
+				$sq_feet = (float) preg_replace('/[^0-9.]/', '', get_post_meta($post_id, 'Square_Feet', true));			
 												
 				$check = $wpdb->get_var("SELECT id FROM $table WHERE post_id = '$post_id'");
 				
 				if($check){
-					$wpdb->update($table, array('issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('post_id'=>$post_id), array('%d', '%d', '%d'), array('%d'));
+					$wpdb->update($table, array('issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('post_id'=>$post_id), array('%d', '%f', '%f'), array('%d'));
 				}
 				else{
-					$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%d', '%d'));
+					$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%f', '%f'));
 				}
 			endif;
 			
@@ -123,8 +124,8 @@ if(!class_exists('deals_options')) :
 				id bigint unsigned NOT NULL AUTO_INCREMENT,
 				post_id bigint unsigned NOT NULL,
 				issue bigint DEFAULT 0,
-				sq_feet bigint DEFAULT 0,
-				price int DEFAULT 0,
+				sq_feet DOUBLE DEFAULT 0,
+				price DOUBLE DEFAULT 0,
 				PRIMARY KEY(id),
 				UNIQUE(post_id)
 			)";
