@@ -276,20 +276,23 @@ Template Name: Deals
 	<?php
 	
 	function square_feet_sanitizing($sq_feet){
+		global $deal_category;
+		if($deal_category == 'commercial') return $sq_feet;
+		
 		$sq_feet = (int)preg_replace('/[^0-9]/', '', $sq_feet);
 		return number_format($sq_feet);
 	}
 	
 	echo '<table border="0" cellspacing="1" cellpadding="10"><tr>';
 	/*
-	 * echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th></tr>';
+	 * echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Representative</th><th>Landlord</th><th>Landlord Representative</th><th>Notes</th><th>Issue</th></tr>';
 	 */
 	 
 	 
 	 if($deal_category == 'commercial'):	 
-		echo '<tr><th>Address</th><th>Size Info</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+		echo '<tr><th>Address</th><th>Size Info</th><th>Price (in millions)</th><th>Buyer</th><th>Buyer Representative</th><th>Seller</th><th>Seller Representative</th><th>Notes</th><th>Issue</th></tr>';
 	 else :
-		echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Tenant Representative</th><th>Landlord</th><th>Landlord Representitive</th><th>Notes</th><th>Issue</th><th>Date</th></tr>';
+		echo '<tr><th>Address</th><th>Square Feet</th><th>Tenant</th><th>Tenant Representative</th><th>Landlord</th><th>Landlord Representative</th><th>Notes</th><th>Issue</th></tr>';
 	 endif;
 	/*
 	 * Now it is time for sorting
@@ -320,7 +323,7 @@ Template Name: Deals
 		echo '<td width="120">' . $custom_fields['Landlord_Representative'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Notes'][0] . '</td>';
 		echo '<td width="120">' . $custom_fields['Issues'][0] . '</td>';
-		echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
+		//echo '<td width="120">' . $custom_fields['Date'][0] . '</td>';
 		echo '</tr>';
 		
 		endwhile;

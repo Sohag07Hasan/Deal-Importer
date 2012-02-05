@@ -156,7 +156,12 @@ if(!class_exists('deals_options')) :
 					$table = $wpdb->prefix . 'trdmdeals';
 					
 					$wpdb->query("DELETE FROM $wpdb->posts WHERE post_type = 'deal'");
-													
+					$columns = $wpdb->get_col("SELECT post_id FROM $table");
+					
+					foreach($columns as $col){
+						$wpdb->query("DELETE FROM $wpdb->postmeta WHERE post_id = '$col'");	
+					}					
+																		
 					$wpdb->query("DELETE FROM $table");		
 					$message = '<div class="updated"><p>All the deals are deleted !</p></div>';							
 				}	
