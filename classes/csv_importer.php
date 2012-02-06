@@ -300,9 +300,11 @@ class CSVImporterPlugin {
 		$issue = $this->timestamp_to_key($issue);
 	
 		$price = (float) preg_replace('/[^0-9.]/', '', $data[2]);		
-		$sq_feet = (float) preg_replace('/[^0-9.]/', '', $data[3]);		
+		$sq_feet = (float) preg_replace('/[^0-9.]/', '', $data[3]);
+		
+		$cat = $this->doc_type(preg_replace('/[^a-z]/', '', $data[0]));		
 					
-		$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet), array('%d', '%d', '%f', '%f'));			
+		$wpdb->insert($table, array('post_id'=>$post_id, 'issue'=>$issue, 'price'=>$price, 'sq_feet'=>$sq_feet, 'cat'=>$cat), array('%d', '%d', '%f', '%f', '%s'));			
 		
 	}
 	

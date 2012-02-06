@@ -1,7 +1,17 @@
 <?php
+if(!isset($_REQUEST['page'])){ 
+	global $post;
+	$action = get_permalink($post->ID) . '?page=1';
+	if($_REQUEST['deal_search'] != 'Y'){
+		header("Location:$action");
+		exit;
+	}
+}
+
 /*
 Template Name: Deals
 */
+
 ?>
 <?php get_header(); ?>
 <div class="main-holder">
@@ -59,7 +69,7 @@ Template Name: Deals
 	$deal_count = 0;
 	$deal_category = "commercial"; // Default category
 	
-	global $wp_rewrite;
+	
 	
 		
 	if (preg_match('/building-sales/', $_SERVER['REQUEST_URI']) || $_REQUEST['category'] == "building-sale") $deal_category = "office";
@@ -97,86 +107,57 @@ Template Name: Deals
 	
 		add_filter('posts_orderby', 'order_by');
 	
-	
-	function group_by($orderby){
-		global $wpdb;
-		$table = $wpdb->prefix . 'trdmdeals';
-		return $table . '.issue';
-	}
-	//add_filter('posts_groupby', 'group_by');
-	
+		
 	
 	//seach things are here
 	if($_REQUEST['deal_search'] == 'Y') :
-		add_filter('posts_where_paged', 'query_changing',10,2);
-		add_filter('posts_results', 'result_changing',10,2);
+		add_filter('posts_where_paged', 'query_changing',10,2);		
 	endif;
 	
-	
-	
-	
-	function query_changing($where, &$wp_query){		
-	//	echo $where . '<br/><br/>';
-		$string = $_REQUEST['search_string'];
-		if($string == '') return $where;
+	function query_changing($where, &$wp_query){
 				
-		global $wpdb;
-		$where = 'AND ' . '(((' . $wpdb->posts . '.post_title LIKE ' . "'%$string%'" . ') OR (' . $wpdb->posts . '.post_content LIKE ' . "'%$string%'" . ') OR (' . $wpdb->postmeta . '.meta_value LIKE ' . "'%$string%'" . ')))' . 'AND ' . $wpdb->posts . '.post_type IN ' . "('deal')" . ' AND ' . $wpdb->posts . '.post_status = ' . "'publish'";
-		//echo $where;
-		//exit;		
-		return $where;
+		$string = $_REQUEST['search_string'];		
+		$min = $_REQUEST['sqmin'];	
+		$max = $_REQUEST['sqmax'];
 		
-	}
-	
-	function result_changing($posts, $obj){
-		global $deal_count;
-		if(empty($posts)) return $posts;
-		$newposts = array();
-		$finalposts = array();
-		global $deal_category;
 		
-		foreach($posts as $post) :
-			if(get_post_meta($post->ID, 'Category', true) == $deal_category) $newposts[] = $post;			
-		endforeach;
+		if($string == '' && $min == '' && $max == '') return $where;
+		
+		//now doing the search stuff
 		
 		$min = (int) $_REQUEST['sqmin'];	
 		$max = (int) $_REQUEST['sqmax'];
 		
-		if($max > $min) :
-			foreach($newposts as $post) :				
-				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
-				if($sq_val >= $min && $sq_val <= $max) $finalposts[] = $post;
-			endforeach;
-			$newposts = $finalposts;
-		elseif($min > 0) :
-			foreach($newposts as $post) :
-				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
-				if($sq_val >= $min) $finalposts[] = $post;
-			endforeach;
-			$newposts = $finalposts;
-			
-		elseif($max > 10) :			
-			foreach($newposts as $post) :
-				$sq_val = get_post_meta($post->ID, 'Square_Feet', true);
-				if($sq_val <= $max) $finalposts[] = $post;
-			endforeach;
-			$newposts = $finalposts;
-		else :
-			$deal_count = count($newposts);
-			return $newposts;
-		endif;
-						
-		$deal_count = count($newposts);
-		return $newposts;
-	}
-	
+		global $wpdb, $deal_category;
+		$table = $wpdb->prefix . 'trdmdeals';
 		
-	global $wp_rewrite;
+				
+		
+		$where = 'AND ' . '(((' . $wpdb->posts . '.post_title LIKE ' . "'%$string%'" . ') OR (' . $wpdb->posts . '.post_content LIKE ' . "'%$string%'" . ') OR (' . $wpdb->postmeta . '.meta_value LIKE ' . "'%$string%'" . ')))' . ' AND ' . $wpdb->posts . '.post_type IN ' . "('deal')" . ' AND ' . $wpdb->posts . '.post_status = ' . "'publish' AND $table" . '.cat = ' . "'$deal_category'" ;
+		
+		
+		if($max > $min):
+			$where .= ' AND (' . $table . '.sq_feet >= ' . $min . ' AND ' . $table . '.sq_feet >= ' . $max . ')';
+		elseif($min > 0) :
+			$where .= ' AND (' . $table . '.sq_feet >= ' . $min . ')';
+
+		elseif($max > 10) :			
+			$where .= ' AND (' . $table . '.sq_feet <= ' . $max . ')';
+
+		else :
+			$where = $where;
+		endif;
+				
+		return $where;
+		
+	}
+		
+	$current = $_REQUEST['page'];
 			
 	$args = array( 
 		'post_type' => 'deal',
 		'posts_per_page' => 10, 
-		'paged' => $paged,		
+		'paged' => $current,		
 		'meta_query' => array(
 			array(
 				'key' => 'Category',
@@ -187,37 +168,27 @@ Template Name: Deals
 	);
 	
 	
-	if($_REQUEST['deal_search'] == 'Y') :
-		$args['posts_per_page'] = -1;
-	endif;
-	
-	
 	$wp_query = new WP_Query( $args );
-	$wp_query->query_vars['paged'] > 1 ? $current = $wp_query->query_vars['paged'] : $current = 1;
-	
-	if($_REQUEST['deal_search'] != 'Y') :
-	
+
 		$pagination = array(
-			'base' => @add_query_arg('page','%#%'),
-			'format' => '',
+			'base' => @add_query_arg('page','%#%'),			
 			'total' => $wp_query->max_num_pages,
 			'current' => $current,
 			'show_all' => false,
 			'type' => 'plain'
 			);
 
-		if( $wp_rewrite->using_permalinks() )
-			$pagination['base'] = user_trailingslashit( trailingslashit( remove_query_arg( 's', get_pagenum_link( 1 ) ) ) . 'page/%#%/', 'paged' );
-
+	
 		if( !empty($wp_query->query_vars['s']) )
 			$pagination['add_args'] = array( 's' => get_query_var( 's' ) );
-			
+
+		
 		echo '<div align="right" style="margin: 10px 0 0 0;">' . paginate_links( $pagination ) . '</div>';	
 		
 		
 		echo '<div>';
 		
-	endif;
+	
 	
 	?>
 		<!-- deal search -->
@@ -225,6 +196,7 @@ Template Name: Deals
 		<div class="deal_search">
 			<form action="<?php echo $action; ?>" method='get'>
 				<input type='hidden' name='deal_search' value='Y' />
+				<input type='hidden' name='page' value='1' />
 				<table class='form-table'>
 					<tr>
 						<td>Search <?php echo $deal_category;?> Deal</td>
@@ -331,9 +303,9 @@ Template Name: Deals
 	
 		echo '</tr></table>';
 		echo '</div>';
-		if($_REQUEST['deal_search'] != 'Y') : 
-			echo '<div style="padding-top: 25px;" align="center">' . paginate_links( $pagination ) . '</div>';
-		endif;		
+		
+		echo '<div style="padding-top: 25px;" align="center">' . paginate_links( $pagination ) . '</div>';
+		
 ?>
 </div>
 <?php // get_sidebar(); ?>
